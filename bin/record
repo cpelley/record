@@ -1,0 +1,58 @@
+#! /usr/bin/env python
+'''
+Record is a small utility to log datetime stamped entries at the command line.
+
+'''
+# The MIT License (MIT)
+#
+# Copyright (c) 2013 Carwyn Pelley
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+import argparse
+import datetime
+import os
+
+
+__version__ = '1.0'
+
+
+def recordmessage(ofile, message):
+    date = datetime.datetime.today()
+    disp = '\n%s%s' % (date.strftime('%Y,%m,%d,%H,%M,%S,'), message)
+
+    with open(ofile, "a") as fh:
+        if os.stat(ofile)[6] == 0:
+            fh.writelines('year,month,day,hour(24),minute,second,message')
+        fh.writelines(disp)
+
+
+if __name__ == '__main__':
+    desc = 'Record a date/time stamped message to a log file'
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('-o', '--file', help='custom logfile',
+                        default=os.path.join(os.getenv('HOME'), 'Desktop',
+                                             'record.csv'))
+#    parser.add_argument('-s', '--start', help='Start timed event',
+#                        action='store_true')
+#    parser.add_argument('-f', '--stop', help='Complete timed event',
+#                        action='store_true')
+#    parser.add_argument('message', type=str, help='Message')
+
+    args = parser.parse_args()
+    recordmessage(args.file, args.message)

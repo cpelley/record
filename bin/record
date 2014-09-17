@@ -1,8 +1,4 @@
 #! /usr/bin/env python
-'''
-Record is a small utility to log datetime stamped entries at the command line.
-
-'''
 # The MIT License (MIT)
 #
 # Copyright (c) 2013 Carwyn Pelley
@@ -24,35 +20,47 @@ Record is a small utility to log datetime stamped entries at the command line.
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+'''
+Record is a small utility to log datetime stamped entries at the command line.
+
+'''
 import argparse
 import datetime
 import os
 
 
-__version__ = '1.0'
+__version__ = '1.1'
 
 
-def recordmessage(ofile, message):
+def recordmessage(fh, message):
     date = datetime.datetime.today()
-    disp = '\n%s%s' % (date.strftime('%Y,%m,%d,%H,%M,%S,'), message)
-
-    with open(ofile, "a") as fh:
-        if os.stat(ofile)[6] == 0:
-            fh.writelines('year,month,day,hour(24),minute,second,message')
-        fh.writelines(disp)
+    disp = '\n%s,%s' % (date.strftime('%Y,%m,%d,%H,%M'), message)
+    fh.writelines(disp)
 
 
 if __name__ == '__main__':
     desc = 'Record a date/time stamped message to a log file'
     parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('message', type=str, help='Message')
     parser.add_argument('-o', '--file', help='custom logfile',
                         default=os.path.join(os.getenv('HOME'), 'Desktop',
                                              'record.csv'))
-#    parser.add_argument('-s', '--start', help='Start timed event',
-#                        action='store_true')
-#    parser.add_argument('-f', '--stop', help='Complete timed event',
-#                        action='store_true')
-#    parser.add_argument('message', type=str, help='Message')
+    parser.add_argument('-t', '--task', help='Stopwatch task',
+                        action='store_true')
 
     args = parser.parse_args()
-    recordmessage(args.file, args.message)
+    with open(args.file, "a") as fh:
+        if os.stat(args.file)[6] == 0:
+            fh.writelines('year,month,day,hour(24),minute,message,'
+                          'duration(hours)')
+        if args.task:
+            start = datetime.datetime.today()
+            print 'Task started...'
+            raw_input()
+            dt = datetime.datetime.today() - start
+            hours = (dt.days * 24) + (dt.seconds/(60.*60))
+            hours = round(hours*1e3) / 1e3
+            args.message += ',' + str(hours)
+            print 'task completed in {} hours'.format(hours)
+
+        recordmessage(fh, args.message)

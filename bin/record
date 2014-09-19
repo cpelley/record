@@ -24,6 +24,7 @@
 Record is a small utility to log datetime stamped entries at the command line.
 
 '''
+import abc
 import argparse
 import datetime
 import os
@@ -33,27 +34,40 @@ __version__ = '1.1'
 
 
 class Logger(object):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def write_message(self, message):
+        pass
+
+    def write_task(self, message, hours):
+        message += ',' + str(hours)
+        self.write_message(message)
+
+    def start_task(self, message):
+        print 'Task started...'
+        start = datetime.datetime.today()
+        raw_input()
+        dt = datetime.datetime.today() - start
+        hours = (dt.days * 24) + (dt.seconds/(60.*60))
+        hours = round(hours*1e3) / 1e3
+        print 'task completed in {} hours'.format(hours)
+        self.write_task(message, hours)
+
+
+class CSV_Logger(Logger):
     def __init__(self, filehandle):
         self.fh = filehandle
 
     def write_message(self, message):
+        self.write_header()
         date = datetime.datetime.today()
         disp = '\n%s,%s' % (date.strftime('%d/%m/%Y,%H:%M'), message)
         self.fh.writelines(disp)
 
     def write_header(self):
-        self.fh.writelines('dd/mm/yyyy,hh:mm,message,duration(hours)')
-
-    def write_task(self, message):
-        start = datetime.datetime.today()
-        print 'Task started...'
-        raw_input()
-        dt = datetime.datetime.today() - start
-        hours = (dt.days * 24) + (dt.seconds/(60.*60))
-        hours = round(hours*1e3) / 1e3
-        args.message += ',' + str(hours)
-        print 'task completed in {} hours'.format(hours)
-        self.write_message(message)
+        if os.stat(self.fh.name)[6] == 0:
+            self.fh.writelines('dd/mm/yyyy,hh:mm,message,duration(hours)')
 
 
 if __name__ == '__main__':
@@ -65,18 +79,16 @@ if __name__ == '__main__':
                                              'record.csv'))
     parser.add_argument('-t', '--task', help='Stopwatch task',
                         action='store_true')
-    parser.add_argument('-p', '--ptask', help='Past tence task',
-                        action='store_true')
-    parser.add_argument('-l', '--list', help='Print a numbered list of entries',
-                        action='store_true')
-    parser.add_argument('-d', '--delete', help='Delete an entry', type=int)
+    parser.add_argument('-p', '--ptask',
+                        help='Number of hours for a given task',
+                        type=float)
 
     args = parser.parse_args()
     with open(args.file, "a") as fh:
-        log = Logger(fh)
-        if os.stat(fh.name)[6] == 0:
-            log.write_header()
+        log = CSV_Logger(fh)
         if args.task:
-            log.write_task(args.message)
+            log.start_task(args.message)
+        elif args.ptask is not None:
+            log.write_task(args.message, args.ptask)
         else:
             log.write_message(args.message)
